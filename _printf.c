@@ -1,48 +1,80 @@
 #include "main.h"
-#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
 
 /**
- * _printf - produces output according to a format.
- * @format: a character string.
- * Return: number of characters printed(
- * excluding the null terminator)
+ * print_op - function to check which specifier to print
+ * @format: string being passed
+ * @print_arr: array of struct ops
+ * @list: list of arguments to print
+ * Return: numb of char to be printed
+ */
+
+int print_op(const char *format, fmt_t *print_arr, va_list list)
+{
+	char a;
+	int count = 0, b = 0, c = 0;
+
+	a = format[b];
+	while (a != '\0')
+	{
+		if (a == '%')
+		{
+			c = 0;
+			b++;
+			a = format[b];
+			while (print_arr[c].type != NULL &&
+			       a != *(print_arr[c].type))
+				c++;
+
+			if (print_arr[c].type != NULL)
+				count = count + print_arr[c].f(list);
+			else
+			{
+				if (a == '\0')
+					return (-1);
+				if (a != '%')
+					count += _putchar('%');
+				count += _putchar(a);
+			}
+		}
+		else
+			count += _putchar(a);
+		b++;
+		a = format[b];
+	}
+	return (count);
+}
+
+/**
+ * _printf - prints output according to format
+ * @format: string being passed
+ * Return: char to be printed
  */
 
 int _printf(const char *format, ...)
 {
-	int i = 0, var = 0;
-	va_list v_ls;
-	buffer *buf;
+	va_list list;
+	int a = 0;
 
-	buf = buf_new();
-	if (buf == NULL)
-		return (-1);
+	fmt_t ops[] = {
+		{"c", ch},
+		{"s", str},
+		{"d", _int},
+		{"b", _bin},
+		{"i", _int},
+		{"u", _ui},
+		{"o", _oct},
+		{"x", _hex_l},
+		{"X", _hex_u},
+		{"R", _rot13},
+		{NULL, NULL}
+	};
+
 	if (format == NULL)
 		return (-1);
-	va_start(v_ls, format);
-	while (format[i])
-	{
-		buf_wr(buf);
-		if (format[i] == '%')
-		{
-			var = opid(buf, v_ls, format, i);
-			if (var < 0)
-			{
-				i = var;
-				break;
-			}
-			i += var;
-			continue;
-		}
-		buf->str[buf->index] = format[i];
-		buf_inc(buf);
-		i++;
-	}
-	buf_write(buf);
-	if (var >= 0)
-		i = buf->overflow;
-	buf_end(buf);
-	va_end(v_ls);
-	return (i);
+	va_start(list, format);
+	a = print_op(format, ops, list);
+	va_end(list);
+	return (a);
 }
-
