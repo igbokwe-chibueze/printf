@@ -1,80 +1,68 @@
 #include "main.h"
-#include <stdarg.h>
-#include <stdio.h>
+
+void print_buffer(char buffer[], int *buff_ind);
 
 /**
- * print_op - function to check which specifier to print
- * @format: string being passed
- * @print_arr: array of struct ops
- * @list: list of arguments to print
- * Return: numb of char to be printed
- */
-
-int print_op(const char *format, fmt_t *print_arr, va_list list)
-{
-	char a;
-	int count = 0, b = 0, c = 0;
-
-	a = format[b];
-	while (a != '\0')
-	{
-		if (a == '%')
-		{
-			c = 0;
-			b++;
-			a = format[b];
-			while (print_arr[c].type != NULL &&
-			       a != *(print_arr[c].type))
-				c++;
-
-			if (print_arr[c].type != NULL)
-				count = count + print_arr[c].f(list);
-			else
-			{
-				if (a == '\0')
-					return (-1);
-				if (a != '%')
-					count += _putchar('%');
-				count += _putchar(a);
-			}
-		}
-		else
-			count += _putchar(a);
-		b++;
-		a = format[b];
-	}
-	return (count);
-}
-
-/**
- * _printf - prints output according to format
- * @format: string being passed
- * Return: char to be printed
+ * _printf - Printf function
+ * @format: format.
+ * Return: Printed chars.
+ *
  */
 
 int _printf(const char *format, ...)
 {
+	int i, printed = 0, printed_chars = 0;
+	int flags, width, precision, size, buff_ind = 0;
 	va_list list;
-	int a = 0;
-
-	fmt_t ops[] = {
-		{"c", ch},
-		{"s", str},
-		{"d", _int},
-		{"b", _bin},
-		{"i", _int},
-		{"u", _ui},
-		{"o", _oct},
-		{"x", _hex_l},
-		{"X", _hex_u},
-		{"R", _rot13},
-		{NULL, NULL}
-	};
+	char buffer[BUFF_SIZE];
 
 	if (format == NULL)
 		return (-1);
+
 	va_start(list, format);
-	a = print_op(format, ops, list);
+
+	for (i = 0; format && format[i] != '\0'; i++)
+	{
+		if (format[i] != '%')
+		{
+			buffer[buff_ind++] = format[i];
+			if (buff_ind == BUFF_SIZE)
+				print_buffer(buffer, &buff_ind);
+			/* write(1, &format[i], 1);*/
+			printed_chars++;
+		}
+		else
+		{
+			print_buffer(buffer, &buff_ind);
+			flags = get_flags(format, &i);
+			width = get_width(format, &i, list);
+			precision = get_precision(format, &i, list);
+			size = get_size(format, &i);
+			++i;
+			printed = handle_print(format, &i, list, buffer,
+				flags, width, precision, size);
+			if (printed == -1)
+				return (-1);
+			printed_chars += printed;
+		}
+	}
+	print_buffer(buffer, &buff_ind);
+
 	va_end(list);
-	return (a);
+
+	return (printed_chars);
+}
+
+/**
+ * print_buffer - Prints the contents of the buffer if it exist
+ * @buffer: Array of chars
+ * @buff_ind: Index at which to add next char, represents the length.
+ */
+
+void print_buffer(char buffer[], int *buff_ind)
+{
+	if (*buff_ind > 0)
+		write(1, &buffer[0], *buff_ind);
+
+	*buff_ind = 0;
 }
